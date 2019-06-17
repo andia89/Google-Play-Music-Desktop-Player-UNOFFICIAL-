@@ -1,7 +1,9 @@
-import dbus from 'dbus-next';
+import DBus from 'dbus';
 
 function registerBindings(desktopEnv, session) {
-  const listener = (err, iface) => {
+  session.getInterface(`org.${desktopEnv}.SettingsDaemon`,
+  `/org/${desktopEnv}/SettingsDaemon/MediaKeys`,
+  `org.${desktopEnv}.SettingsDaemon.MediaKeys`, (err, iface) => {
     if (!err) {
       iface.on('MediaPlayerKeyPressed', (n, keyName) => {
         switch (keyName) {
@@ -12,16 +14,15 @@ function registerBindings(desktopEnv, session) {
           default: return;
         }
       });
-      iface.GrabMediaPlayerKeys('GPMDP', 0); // eslint-disable-line
+      iface.GrabMediaPlayerKeys(0, `org.${desktopEnv}.SettingsDaemon.MediaKeys`); // eslint-disable-line
     }
-  };
-
-  session.getInterface(`org.${desktopEnv}.SettingsDaemon`, `/org/${desktopEnv}/SettingsDaemon/MediaKeys`, `org.${desktopEnv}.SettingsDaemon.MediaKeys`, listener);
-  session.getInterface(`org.${desktopEnv}.SettingsDaemon.MediaKeys`, `/org/${desktopEnv}/SettingsDaemon/MediaKeys`, `org.${desktopEnv}.SettingsDaemon.MediaKeys`, listener);
+  });
 }
 
 try {
-  const session = dbus.sessionBus();
+  const dbus = new DBus();
+  const session = dbus.getBus('session');
+
   registerBindings('gnome', session);
   registerBindings('mate', session);
 } catch (e) {
